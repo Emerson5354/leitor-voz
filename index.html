@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leitor de Texto</title>
+</head>
+<body>
+  <h2>🔊 Leitor de Texto com Controles</h2>
+  <textarea id="texto" rows="15" cols="80" placeholder="Cole seu texto aqui..."></textarea><br><br>
+
+  <label for="velocidade">Velocidade da fala: </label>
+  <input type="range" id="velocidade" min="0.5" max="2" value="1" step="0.1"><br><br>
+
+  <button onclick="lerTexto()">▶️ Ler</button>
+  <button onclick="pausarOuRetomar()">⏸️ Pausar/Retomar</button>
+  <button onclick="pararLeitura()">⏹️ Parar</button>
+
+  <script>
+    let utterance;
+    let isPaused = false;
+
+    function lerTexto() {
+      const texto = document.getElementById("texto").value;
+      const velocidade = parseFloat(document.getElementById("velocidade").value);
+
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+
+      utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = "pt-BR";
+      utterance.rate = velocidade;
+      speechSynthesis.speak(utterance);
+    }
+
+    function pausarOuRetomar() {
+      if (speechSynthesis.speaking) {
+        if (isPaused) {
+          speechSynthesis.resume();
+          isPaused = false;
+        } else {
+          speechSynthesis.pause();
+          isPaused = true;
+        }
+      }
+    }
+
+    function pararLeitura() {
+      speechSynthesis.cancel();
+      isPaused = false;
+    }
+  </script>
+</body>
+</html>
