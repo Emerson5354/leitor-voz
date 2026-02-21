@@ -7,10 +7,8 @@
 <body>
   <h2>🔊 Leitor de Texto com Controles</h2>
 
-  <!-- Área de texto original -->
   <textarea id="texto" rows="15" cols="80" placeholder="Cole seu texto aqui..."></textarea><br><br>
 
-  <!-- NOVO: seleção de voz -->
   <label for="voz">Voz: </label>
   <select id="voz"></select><br><br>
 
@@ -21,10 +19,8 @@
   <button onclick="pausarOuRetomar()">⏸️ Pausar/Retomar</button>
   <button onclick="pararLeitura()">⏹️ Parar</button>
 
-  <!-- NOVO: visor da frase atual -->
   <h3>Frase sendo lida agora:</h3>
   <div id="frase-atual" style="border: 1px solid #ccc; padding: 10px; min-height: 40px; max-width: 800px; background:#f9f9f9;">
-    <!-- A frase atual aparece aqui -->
   </div>
 
   <script>
@@ -34,28 +30,44 @@
     let indiceFraseAtual = 0;
     let vozesDisponiveis = [];
 
-    // Carrega as vozes disponíveis e preenche o <select>
     function carregarVozes() {
       vozesDisponiveis = speechSynthesis.getVoices();
       const selectVoz = document.getElementById("voz");
       selectVoz.innerHTML = "";
+
+      const vozSalva = localStorage.getItem("vozSelecionada");
 
       vozesDisponiveis.forEach((voz, index) => {
         const option = document.createElement("option");
         option.value = index;
         option.textContent = `${voz.name} (${voz.lang})`;
 
-        // Tenta selecionar automaticamente a primeira voz em português
-        if (voz.lang.toLowerCase().startsWith("pt") && !selectVoz.dataset.ptSelecionada) {
+        // Se houver voz salva, seleciona ela
+        if (vozSalva !== null && parseInt(vozSalva, 10) === index) {
           option.selected = true;
-          selectVoz.dataset.ptSelecionada = "true";
         }
 
         selectVoz.appendChild(option);
       });
+
+      // Se não houver voz salva, tenta selecionar a primeira em português
+      if (vozSalva === null) {
+        for (let i = 0; i < vozesDisponiveis.length; i++) {
+          if (vozesDisponiveis[i].lang.toLowerCase().startsWith("pt")) {
+            selectVoz.value = i;
+            break;
+          }
+        }
+      }
     }
 
-    // Atualiza a caixa que mostra a frase atual
+    // Salva voz quando usuário troca
+    document.addEventListener("change", function(e) {
+      if (e.target.id === "voz") {
+        localStorage.setItem("vozSelecionada", e.target.value);
+      }
+    });
+
     function atualizarFraseAtual() {
       const visor = document.getElementById("frase-atual");
       if (frases.length > 0 && indiceFraseAtual < frases.length) {
@@ -65,7 +77,6 @@
       }
     }
 
-    // Lê o texto em frases, uma por vez
     function lerTexto() {
       const texto = document.getElementById("texto").value.trim();
       const velocidade = parseFloat(document.getElementById("velocidade").value);
@@ -74,12 +85,10 @@
 
       if (!texto) return;
 
-      // Interrompe qualquer fala anterior
       if (speechSynthesis.speaking || speechSynthesis.paused) {
         speechSynthesis.cancel();
       }
 
-      // Quebra o texto em frases usando pontuação
       frases = texto
         .split(/(?<=[\.\!\?\…])\s+/)
         .filter(f => f.length > 0);
@@ -89,25 +98,21 @@
 
       function falarFrase(indice) {
         if (indice >= frases.length) {
-          // Terminou todas as frases
           indiceFraseAtual = frases.length;
           atualizarFraseAtual();
           return;
         }
 
         utterance = new SpeechSynthesisUtterance(frases[indice]);
-        utterance.lang = "pt-BR";
         utterance.rate = velocidade;
 
         if (vozesDisponiveis[indiceVoz]) {
           utterance.voice = vozesDisponiveis[indiceVoz];
         }
 
-        // Atualiza o visor com a frase atual
         atualizarFraseAtual();
 
         utterance.onend = () => {
-          // Se não estiver pausado, avança para a próxima frase
           if (!speechSynthesis.paused) {
             indiceFraseAtual++;
             falarFrase(indiceFraseAtual);
@@ -140,7 +145,6 @@
       atualizarFraseAtual();
     }
 
-    // Eventos para carregar as vozes
     window.addEventListener("load", carregarVozes);
     speechSynthesis.addEventListener("voiceschanged", carregarVozes);
   </script>
